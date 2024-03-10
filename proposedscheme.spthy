@@ -165,29 +165,30 @@ lemma SK_Veh_Secrecy:
     All Key #i. Secret_2(Key) @i
                 ==> not (Ex #j. K(Key) @j)"
 
-        lemma TA_injective_agreement_on_X_v:
+lemma injectiveagreement_rsu_veh:
+                                                                          "
+  All R Veh m #i. Commit(R,Veh, <'R','Veh',m>) @i
+  ==> (Ex #j. Running(Veh,R, <'Veh','R',m>) @j  & j < i
+      & not (Ex R2 Veh2 #i2. Commit(R2,Veh2, <'R','TA',m>) @i2 & not(#i2 = #i)))"
+
+lemma injectiveagreement_ta_rsu:
                                                                       "
-                    All R TA m #i. Commit(TA,R, <'TA','R',m>) @i
-                                    ==> (Ex #j. Running(R,TA, <'R','TA',m>) @j  & j < i
-                                    & not (Ex R2 TA2 #i2. Commit(TA2,R2, <'TA','R',m>) @i2 & not(#i2 = #i)))"
+All R TA m #i. Commit(TA,R, <'TA','R',m>) @i
+    ==> (Ex #j. Running(R,TA, <'R','TA',m>) @j  & j < i
+    & not (Ex R2 TA2 #i2. Commit(TA2,R2, <'TA','R',m>) @i2 & not(#i2 = #i)))"
 
-lemma R_injective_agreement_on_sk_j:
+lemma injectiveagreement_rsu_ta:
                                                       "
-                All R TA m #i. Commit(R,TA, <'R','TA',m>) @i
-                    ==> (Ex #j. Running(TA,R, <'TA','R',m>) @j  & j < i
-                    & not (Ex R2 TA2 #i2. Commit(R2,TA2, <'R','TA',m>) @i2 & not(#i2 = #i)))"
+  All R TA m #i. Commit(R,TA, <'R','TA',m>) @i
+    ==> (Ex #j. Running(TA,R, <'TA','R',m>) @j  & j < i
+    & not (Ex R2 TA2 #i2. Commit(R2,TA2, <'R','TA',m>) @i2 & not(#i2 = #i)))"
 
-lemma R_injective_agreement_on_X_v:
-                                                          "
-      All R Veh m #i. Commit(R,Veh, <'R','Veh',m>) @i
-                        ==> (Ex #j. Running(Veh,R, <'Veh','R',m>) @j  & j < i
-                        & not (Ex R2 Veh2 #i2. Commit(R2,Veh2, <'R','TA',m>) @i2 & not(#i2 = #i)))"
 
-  lemma Veh_injective_agreement_on_SK:
+lemma injectiveagreement_veh_ta:
                                                               "
-                    All Veh TA m #i. Commit(Veh,TA, <'Veh','TA',m>) @i
-                      ==> (Ex #j. Running(TA,Veh, <'TA','Veh',m>) @j  & j < i
-                                                & not (Ex Veh2 TA2 #i2. Commit(Veh2,TA2,<'Veh','TA',m>) @i2 & not(#i2 = #i)))"
+    All Veh TA m #i. Commit(Veh,TA, <'Veh','TA',m>) @i
+    ==> (Ex #j. Running(TA,Veh, <'TA','Veh',m>) @j  & j < i
+      & not (Ex Veh2 TA2 #i2. Commit(Veh2,TA2,<'Veh','TA',m>) @i2 & not(#i2 = #i)))"
 
 lemma trace_exists: exists-trace
 "
