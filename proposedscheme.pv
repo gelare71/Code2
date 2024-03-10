@@ -1,0 +1,144 @@
+
+(*** Security Analysis and Enhancement of a Blockchain-Based Authentication Protocol for IoVs ***)
+
+(* Channel Definition *)
+free sch_net : channel [private].
+free public_net : channel.
+
+(* Private Terms *)
+free IDi : bitstring [private].
+free PWi : bitstring [private].
+free Bi : bitstring [private].
+free IDta : bitstring [private].
+free SSK1 : bitstring [private].
+free SSK2 : bitstring [private].
+free skta : bitstring [private].
+
+(* Public Terms *)
+free ptr : bitstring.
+free IDj : bitstring.
+const P : bitstring.
+
+
+(* Functions *)
+fun HashFunOne(bitstring) : bitstring.
+fun HashFunTwo(bitstring, bitstring) : bitstring.
+fun HashFunThree(bitstring, bitstring, bitstring) : bitstring.
+fun HashFunFour(bitstring, bitstring, bitstring, bitstring) : bitstring.
+fun HashFunFive(bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring.
+fun HashFunSix(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring.
+fun XORFun(bitstring, bitstring) : bitstring.
+fun ScalarMul(bitstring, bitstring) : bitstring.
+fun Multiply(bitstring, bitstring) : bitstring.
+fun Gen(bitstring): bitstring.
+fun Rep(bitstring, bitstring): bitstring.
+fun SEncrypt(bitstring, bitstring): bitstring.
+fun Concat(bitstring, bitstring) : bitstring.
+
+(* Destructors *)
+reduc forall m5 : bitstring, m6 : bitstring; SDecrypt(SEncrypt(m5, m6), m6) = m5.
+
+(* Equations *)
+equation forall m7 : bitstring, m8 : bitstring; ScalarMul(m7, ScalarMul(m8, P)) = ScalarMul(m8, ScalarMul(m7, P)).
+equation forall m9 : bitstring, m10 : bitstring; XORFun(m9, m10) = XORFun(m10, m9).
+
+
+(* queries *)
+(* the following queries indicates the security of established session key*)
+query attacker (SSK1).
+query attacker (SSK2).
+(* this query indicates the anonymity of vehicle *)
+noninterf IDi.
+(* this query indicates the resistance of protocol against  "password guessing attack" *)
+weaksecret PWi.
+(* the following queries indicate the resistance of protocol against  "replay attack and impersonation attacks" *)
+query m1 : bitstring; inj-event ( Session_Termination (m1) ) ==> inj-event (Session_Initiation (m1)).
+
+
+(* Events *)
+event Session_Initiation (bitstring).
+event Session_Termination (bitstring).
+
+(* Vehi *)
+let pVehi=
+in (sch_net, (Ai : bitstring, Ppubta : bitstring, Ppubj :bitstring));
+let (a: bitstring, b: bitstring) = Gen(Bi) in
+let HPWi = HashFunTwo(a,PWi) in
+let Cv = XORFun(HashFunTwo(IDi,HPWi),Ai) in
+let Bv = HashFunTwo(Ai,HPWi) in
+let a' = Rep (Bi,b) in
+let HPWi' = HashFunTwo(a',PWi) in
+let Ai' = XORFun(HashFunTwo(IDi,HPWi'),Cv) in
+let Bv' = HashFunTwo(Ai',HPWi') in
+if Bv = Bv' then
+new t1 : bitstring;
+new mi : bitstring;
+let Xi = HashFunThree(Ai', IDi, t1)in
+let M1 = ScalarMul(mi, P) in
+let E1 = ScalarMul(mi, Ppubta) in
+let E2 = ScalarMul(mi, Ppubj) in
+let M2 = XORFun(ptr, HashFunTwo(E1,t1)) in
+let M3 = XORFun(Xi, HashFunTwo(E2,t1)) in
+let M4 = HashFunFive(M1, M2, M3, t1, Xi) in
+event Session_Initiation (IDi);
+out (public_net, (M1,M2,M3,M4,t1));
+in (public_net, (xN1 : bitstring, xN2 : bitstring, xN4 : bitstring, xt3 : bitstring));
+let vTIDi = XORFun(xN2, HashFunTwo(Xi,xt3)) in
+let SSKij_veh = HashFunThree(ScalarMul(mi,xN1), Xi, IDi) in
+out (public_net, SEncrypt(SSK1, SSKij_veh));
+let N4' = HashFunFour(SSKij_veh,Ai',vTIDi,xt3) in
+if (xN4 = N4') then
+event Session_Termination (IDi);
+0.
+
+(* RSUj *)
+let pRsuj=
+in (sch_net, (sj : bitstring, skj : bitstring));
+in (public_net, (xM1 : bitstring, xM2 : bitstring, xM3 : bitstring, xM4 : bitstring, xt1 : bitstring));
+new t2 : bitstring;
+let E2' = ScalarMul(xM1, skj) in
+let Xi' = XORFun(xM3, HashFunTwo(E2',xt1)) in
+let M4' = HashFunFive(xM1, xM2, xM3, xt1, Xi') in
+if (xM4 = M4') then
+let M5 = XORFun(sj,HashFunTwo(Xi',t2)) in
+let M6 = HashFunSix(skj, Xi', xM1, xM2, xt1, t2) in
+out (public_net, (IDj, xM1, xM2, M6, M5, xt1, t2));
+in (public_net, (xN1 : bitstring, xN2 : bitstring, xN3 : bitstring, xN4 : bitstring, xt3 : bitstring));
+let TIDi' = XORFun(xN2, HashFunTwo(Xi',xt3)) in
+let N3' = HashFunFive(xN1,xN4,TIDi',skj,xt3) in
+if (xN3 = N3') then
+out (public_net, (xN1, xN2, xN4, xt3));
+0.
+
+(* TA *)
+let pTA=
+new ri : bitstring;
+new sj : bitstring;
+let skj =  HashFunFour(IDta, sj, skta, IDj)in
+let Ai =  HashFunFour(IDta, ri, skta, IDi)in
+let Ppubta = ScalarMul(skta, P) in
+let Ppubj = ScalarMul(skj, P) in
+out (public_net, (Ppubta, Ppubj));
+out (sch_net, (Ai, Ppubta, Ppubj));
+out (sch_net, (sj, skj));
+in (public_net, (xIDj : bitstring, xM1 : bitstring, xM2 : bitstring, xM5 : bitstring, xM6 : bitstring, xt1 : bitstring, xt2 : bitstring));
+let E1' = ScalarMul(xM1, skta) in
+let ptr' = XORFun(xM2, HashFunTwo(E1',xt1)) in
+let tXi =  HashFunThree(Ai, IDi, xt1)in
+let sj' = XORFun(xM5,HashFunTwo(tXi,xt2)) in
+let M6' = HashFunSix(skj,tXi, xM1, xM2, xt1, xt2) in
+if (xM6 = M6') then
+new t3 : bitstring;
+new nj : bitstring;
+let N1 = ScalarMul(nj, P) in
+let TIDi = HashFunFour(IDi,tXi,skj,t3) in
+let N2 = XORFun(TIDi, HashFunTwo(tXi,t3)) in
+let SSKij_ta = HashFunThree(ScalarMul(nj,xM1), tXi, IDi) in
+out (public_net, SEncrypt(SSK2, SSKij_ta));
+let N4 = HashFunFour(SSKij_ta,Ai,TIDi,t3) in
+let N3 = HashFunFive(N1,N4,TIDi,skj,t3) in
+out (public_net, (N1, N2, N3, N4, t3));
+0.
+
+process
+( (!pRsuj) | (!pVehi)| (!pTA) )
