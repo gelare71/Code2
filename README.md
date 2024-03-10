@@ -1,6 +1,6 @@
 Related Paper: Security Analysis and Enhancement of a Blockchain-Based Authentication Protocol for IoVs
 
-Authors:Gelare Oudi Ghadim, MohaAuthores: Gelare Oudi Ghadim, Parvin Rastegari, Mohammad Dakhilalian, Faramarz Hendessi and Willy Susilo 
+Authors: Gelare Oudi Ghadim, Mohammad Dakhilalian, Parvin Rastegari, Faramarz Hendessi and Willy Susilo 
 
 The followings are necessary explanations:
 
