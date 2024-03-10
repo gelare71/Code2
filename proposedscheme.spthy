@@ -1,0 +1,201 @@
+
+theory ProposedScheme
+begin
+
+builtins:  bilinear-pairing,hashing,xor
+
+/****** System Setup ******/
+rule Setup:
+    []
+    --[Once('Setup')]->
+    [!Entity($TA, $R, $Veh)]
+
+rule Key_Gnerator:
+    let
+	A_v = h(<~ID_t, ~g, ~SK_ta, ~ID_i>)
+	sk_j = h(<~SK_ta, ~ID_j, ~ID_t, ~s>)
+	public_key_j = pmult(sk_j, 'g')
+    in
+		[!Entity($TA, $R, $Veh),
+      Fr(~ID_t), Fr(~SK_ta), Fr(~ID_i), Fr(~ptr), Fr(~s), Fr(~ID_j), Fr(~tid), Fr(~g)]
+    --[ Once('Init'),
+		Neq(~s, ~g)]->
+  	[
+		TA_Init(~tid, $TA, <$Veh,~ID_i,A_v>,<$R,sk_j>),
+		R_Init(~tid,$R,sk_j,~ID_j,$TA,$Veh),
+    Veh_init(~tid,$Veh,~ID_i,A_v,public_key_j,~ptr,$R,$TA)
+  	]
+
+
+
+rule Veh_1:
+let
+M1 = pmult(~mi, 'g')
+X_v = h(<A_v,ID_i,~t1>)
+nounce = pmult(~mi,public_key_j)
+M2 = X_v XOR h(<nounce,~t1>)
+M3 = h(<X_v,M1,M2,~t1>)
+in
+  [Veh_init(tid,$Veh,ID_i,A_v,public_key_j,ptr,$R,$TA),
+	Fr(~mi), Fr(~t1)
+	]
+	--[Start_Veh($Veh),
+Running($Veh,$R,<'Veh','R',X_v>)
+  ]->
+	[Out(<M1,~t1,ptr,M2,M3>),
+	St_Veh_1(tid,$Veh,ID_i,A_v,X_v,~t1,~mi,M1,$R,$TA)]
+
+rule R_1:
+let
+nounce1 = pmult(sk_j,M1)
+X_v = M2 XOR h(<nounce1,t1>)
+M3_prime = h(<X_v,M1,M2,t1>)
+M6 = h(<sk_j,X_v,M1,t1,~t2>)
+in
+	[	In(<M1,t1,ptr,M2,M3>),
+	R_Init(tid,$R,sk_j,ID_j,$TA,$Veh),
+  Fr(~t2)
+	]
+	--[
+		Start_R($R),
+    Eq(M3,M3_prime),
+    Commit($R,$Veh,<'R','Veh',X_v>),
+    Running($R,$TA,<'R','TA',X_v>)
+	  ]->
+
+	[Out(<M1,t1,ptr,~t2,ID_j,M6>),
+	St_R_1(tid,$R,sk_j,ID_j,$TA,$Veh)]
+
+rule TA_1:
+	let
+X_v = h(<A_v,ID_i,t1>)
+M6_prime = h(<sk_j,X_v,M1,t1,t2>)
+N1 = pmult(~nj, 'g')
+key = pmult(~nj, M1)
+SK = h(<key,X_v,ID_i>)
+N4 = h(<SK,A_v,~t3>)
+N3 = h(<N1,N4,sk_j,~t3>)
+	in
+	[
+		In(<M1,t1,ptr,t2,ID_j,M6>),
+		TA_Init(~tid, $TA, <$Veh,ID_i,A_v>,<$R,sk_j>),
+    Fr(~nj),
+    Fr(~t3)
+	]
+	--[Eq(M6,M6_prime),
+  Commit($TA, $R,<'TA','R',X_v>),
+  Running($TA,$Veh,<'TA','Veh',SK>),
+  Running($TA,$R,<'TA','R',sk_j>),
+  Secret_1(SK)]->
+
+	[Out(<N1,N3,N4,~t3>)]
+
+rule R_2:
+let
+N3_prime = h(<N1,N4,sk_j,t3>)
+in
+		[St_R_1(tid,$R,sk_j,ID_j,$TA,$Veh),
+		In(<N1,N3,N4,t3>), Fr(~t4)
+		]
+	--[Eq(N3,N3_prime),
+  Commit($R,$TA,<'R','TA',sk_j>),
+	  End_R()
+	   ]->
+	[Out(<N1,N3,N4,t3,~t4>)]
+
+  rule Veh_2:
+  let
+key = pmult(mi, N1)
+SK_V = h(<key,X_v,ID_i>)
+N4_prime = h(<SK_V,A_v,t3>)
+  	in
+  	[
+  		In(<N1,N3,N4,t3,~t4>),
+  		St_Veh_1(tid,$Veh,ID_i,A_v,X_v,t1,mi,M1,$R,$TA)
+  	]
+  	--[Eq(N4,N4_prime),
+    Commit($Veh,$TA,<'Veh','TA',SK_V>),
+    Secret_2(SK_V),
+  		End_Veh()
+  	]->
+
+  	[]
+
+
+
+/****** Restriction ******/
+
+
+restriction Nequality:
+  "All x y #i. Neq(x,y) @i ==> not(x = y)
+  "
+  restriction Equality:
+  "
+      All x y #i. Eq(x,y) @i ==> x = y
+
+  "
+
+restriction Once:
+  "All tag #i #j. Once(tag)@i & Once(tag)@j ==> #i = #j"
+
+
+
+restriction Veh_once:
+"
+    All SP #i #j. Start_Veh(SP) @i & Start_Veh(SP) @j
+        ==> #i = #j
+"
+
+restriction R_once:
+"
+    All MD_A #i #j. Start_R(MD_A) @i & Start_R(MD_A) @j
+        ==> #i = #j
+"
+
+
+/****** Security Properties ******/
+
+lemma SK_TA_Secrecy:
+"
+    All Key #i. Secret_1(Key) @i
+        ==> not (Ex #j. K(Key) @j)"
+
+lemma SK_Veh_Secrecy:
+  "
+    All Key #i. Secret_2(Key) @i
+                ==> not (Ex #j. K(Key) @j)"
+
+        lemma TA_injective_agreement_on_X_v:
+                                                                      "
+                    All R TA m #i. Commit(TA,R, <'TA','R',m>) @i
+                                    ==> (Ex #j. Running(R,TA, <'R','TA',m>) @j  & j < i
+                                    & not (Ex R2 TA2 #i2. Commit(TA2,R2, <'TA','R',m>) @i2 & not(#i2 = #i)))"
+
+lemma R_injective_agreement_on_sk_j:
+                                                      "
+                All R TA m #i. Commit(R,TA, <'R','TA',m>) @i
+                    ==> (Ex #j. Running(TA,R, <'TA','R',m>) @j  & j < i
+                    & not (Ex R2 TA2 #i2. Commit(R2,TA2, <'R','TA',m>) @i2 & not(#i2 = #i)))"
+
+lemma R_injective_agreement_on_X_v:
+                                                          "
+      All R Veh m #i. Commit(R,Veh, <'R','Veh',m>) @i
+                        ==> (Ex #j. Running(Veh,R, <'Veh','R',m>) @j  & j < i
+                        & not (Ex R2 Veh2 #i2. Commit(R2,Veh2, <'R','TA',m>) @i2 & not(#i2 = #i)))"
+
+  lemma Veh_injective_agreement_on_SK:
+                                                              "
+                    All Veh TA m #i. Commit(Veh,TA, <'Veh','TA',m>) @i
+                      ==> (Ex #j. Running(TA,Veh, <'TA','Veh',m>) @j  & j < i
+                                                & not (Ex Veh2 TA2 #i2. Commit(Veh2,TA2,<'Veh','TA',m>) @i2 & not(#i2 = #i)))"
+
+lemma trace_exists: exists-trace
+"
+    Ex #i #j . End_Veh() @i & End_R() @j
+	& (All veh1 veh2 #n #k. Start_Veh(veh1) @n
+            & Start_Veh(veh2) @k ==> #n = #k)
+    & (All r1 r2 #n #k. Start_R(r1) @n
+            & Start_R(r2) @k ==> #n = #k)
+"
+
+end
