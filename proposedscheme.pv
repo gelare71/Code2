@@ -119,7 +119,6 @@ let skj =  HashFunFour(IDta, sj, skta, IDj)in
 let Ai =  HashFunFour(IDta, ri, skta, IDi)in
 let Zv =  XORFun(HashFunThree(IDta, IDi, skta), Ai) in
 insert t((ptr,Zv,IDi));
-insert t((ptr,Zv,IDi));
 let Ppubta = ScalarMul(skta, P) in
 let Ppubj = ScalarMul(skj, P) in
 out (public_net, (Ppubta, Ppubj));
@@ -131,7 +130,7 @@ let ptr' = XORFun(xM2, HashFunTwo(E1',xt1)) in
 get t((=ptr',Ai':bitstring,IDi':bitstring)) in
 let tXi =  HashFunThree(Ai', IDi', xt1)in
 let sj' = XORFun(xM5,HashFunTwo(tXi,xt2)) in
-let skj' =  HashFunFour(IDta, sj', skta, IDj)in
+let skj' =  HashFunFour(IDta, sj', skta, xIDj)in
 let M6' = HashFunSix(skj',tXi, xM1, xM2, xt1, xt2) in
 if (xM6 = M6') then
 new t3 : bitstring;
