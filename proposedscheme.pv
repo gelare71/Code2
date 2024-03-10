@@ -13,6 +13,8 @@ free IDta : bitstring [private].
 free SSK1 : bitstring [private].
 free SSK2 : bitstring [private].
 free skta : bitstring [private].
+table t(bitstring).
+
 
 (* Public Terms *)
 free ptr : bitstring.
@@ -115,6 +117,9 @@ new ri : bitstring;
 new sj : bitstring;
 let skj =  HashFunFour(IDta, sj, skta, IDj)in
 let Ai =  HashFunFour(IDta, ri, skta, IDi)in
+let Zv =  XORFun(HashFunThree(IDta, IDi, skta), Ai) in
+insert t((ptr,Zv,IDi));
+insert t((ptr,Zv,IDi));
 let Ppubta = ScalarMul(skta, P) in
 let Ppubj = ScalarMul(skj, P) in
 out (public_net, (Ppubta, Ppubj));
@@ -123,19 +128,21 @@ out (sch_net, (sj, skj));
 in (public_net, (xIDj : bitstring, xM1 : bitstring, xM2 : bitstring, xM5 : bitstring, xM6 : bitstring, xt1 : bitstring, xt2 : bitstring));
 let E1' = ScalarMul(xM1, skta) in
 let ptr' = XORFun(xM2, HashFunTwo(E1',xt1)) in
-let tXi =  HashFunThree(Ai, IDi, xt1)in
+get t((=ptr',Ai':bitstring,IDi':bitstring)) in
+let tXi =  HashFunThree(Ai', IDi', xt1)in
 let sj' = XORFun(xM5,HashFunTwo(tXi,xt2)) in
-let M6' = HashFunSix(skj,tXi, xM1, xM2, xt1, xt2) in
+let skj' =  HashFunFour(IDta, sj', skta, IDj)in
+let M6' = HashFunSix(skj',tXi, xM1, xM2, xt1, xt2) in
 if (xM6 = M6') then
 new t3 : bitstring;
 new nj : bitstring;
 let N1 = ScalarMul(nj, P) in
-let TIDi = HashFunFour(IDi,tXi,skj,t3) in
+let TIDi = HashFunFour(IDi',tXi,skj',t3) in
 let N2 = XORFun(TIDi, HashFunTwo(tXi,t3)) in
-let SSKij_ta = HashFunThree(ScalarMul(nj,xM1), tXi, IDi) in
+let SSKij_ta = HashFunThree(ScalarMul(nj,xM1), tXi, IDi') in
 out (public_net, SEncrypt(SSK2, SSKij_ta));
-let N4 = HashFunFour(SSKij_ta,Ai,TIDi,t3) in
-let N3 = HashFunFive(N1,N4,TIDi,skj,t3) in
+let N4 = HashFunFour(SSKij_ta,Ai',TIDi,t3) in
+let N3 = HashFunFive(N1,N4,TIDi,skj',t3) in
 out (public_net, (N1, N2, N3, N4, t3));
 0.
 
