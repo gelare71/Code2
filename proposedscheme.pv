@@ -1,4 +1,3 @@
-
 (*** Security Analysis and Enhancement of a Blockchain-Based Authentication Protocol for IoVs ***)
 
 (* Channel Definition *)
@@ -53,12 +52,12 @@ noninterf IDi.
 (* this query indicates the resistance of protocol against  "password guessing attack" *)
 weaksecret PWi.
 (* the following queries indicate the resistance of protocol against  "replay attack and impersonation attacks" *)
-query m1 : bitstring; inj-event ( Session_Termination (m1) ) ==> inj-event (Session_Initiation (m1)).
+query m1 : bitstring; inj-event ( Session_End (m1) ) ==> inj-event (Session_Start (m1)).
 
 
 (* Events *)
-event Session_Initiation (bitstring).
-event Session_Termination (bitstring).
+event Session_End (bitstring).
+event Session_Start (bitstring).
 
 (* Vehi *)
 let pVehi=
@@ -81,7 +80,7 @@ let E2 = ScalarMul(mi, Ppubj) in
 let M2 = XORFun(ptr, HashFunTwo(E1,t1)) in
 let M3 = XORFun(Xi, HashFunTwo(E2,t1)) in
 let M4 = HashFunFive(M1, M2, M3, t1, Xi) in
-event Session_Initiation (IDi);
+event Session_Start (IDi);
 out (public_net, (M1,M2,M3,M4,t1));
 in (public_net, (xN1 : bitstring, xN2 : bitstring, xN4 : bitstring, xt3 : bitstring));
 let vTIDi = XORFun(xN2, HashFunTwo(Xi,xt3)) in
@@ -89,7 +88,7 @@ let SSKij_veh = HashFunThree(ScalarMul(mi,xN1), Xi, IDi) in
 out (public_net, SEncrypt(SSK1, SSKij_veh));
 let N4' = HashFunFour(SSKij_veh,Ai',vTIDi,xt3) in
 if (xN4 = N4') then
-event Session_Termination (IDi);
+event Session_End (IDi);
 0.
 
 (* RSUj *)
