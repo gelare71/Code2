@@ -12,14 +12,14 @@ rule Setup:
 
 rule Key_Gnerator:
     let
-	A_v = h(<~ID_t, ~g, ~SK_ta, ~ID_i>)
-	sk_j = h(<~SK_ta, ~ID_j, ~ID_t, ~s>)
+	A_v = h(<~SK_ta, ~ID_i, ~R_i, ~C_i>)
+	sk_j = h(<~SK_ta, ~ID_j, ~R_j, ~C_j>)
 	public_key_j = pmult(sk_j, 'g')
     in
 		[!Entity($TA, $R, $Veh),
-      Fr(~ID_t), Fr(~SK_ta), Fr(~ID_i), Fr(~ptr), Fr(~s), Fr(~ID_j), Fr(~tid), Fr(~g)]
+      Fr(~R_i), Fr(~SK_ta), Fr(~ID_i), Fr(~ptr), Fr(~R_j), Fr(~C_j), Fr(~ID_j), Fr(~tid), Fr(~C_i)]
     --[ Once('Init'),
-		Neq(~s, ~g)]->
+		Neq(~C_j, ~C_i)]->
   	[
 		TA_Init(~tid, $TA, <$Veh,~ID_i,A_v>,<$R,sk_j>),
 		R_Init(~tid,$R,sk_j,~ID_j,$TA,$Veh),
@@ -33,14 +33,14 @@ let
 M1 = pmult(~mi, 'g')
 X_v = h(<A_v,ID_i,~t1>)
 nounce = pmult(~mi,public_key_j)
-M2 = X_v XOR h(<nounce,~t1>)
-M3 = h(<X_v,M1,M2,~t1>)
+M2 = h(X_v) XOR h(<nounce,~t1>)
+M3 = h(<h(X_v),M1,M2,~t1>)
 in
   [Veh_init(tid,$Veh,ID_i,A_v,public_key_j,ptr,$R,$TA),
 	Fr(~mi), Fr(~t1)
 	]
 	--[Start_Veh($Veh),
-Running($Veh,$R,<'Veh','R',X_v>)
+Running($Veh,$R,<'Veh','R',h(X_v)>)
   ]->
 	[Out(<M1,~t1,ptr,M2,M3>),
 	St_Veh_1(tid,$Veh,ID_i,A_v,X_v,~t1,~mi,M1,$R,$TA)]
@@ -48,9 +48,9 @@ Running($Veh,$R,<'Veh','R',X_v>)
 rule R_1:
 let
 nounce1 = pmult(sk_j,M1)
-X_v = M2 XOR h(<nounce1,t1>)
-M3_prime = h(<X_v,M1,M2,t1>)
-M6 = h(<sk_j,X_v,M1,t1,~t2>)
+nouncex = M2 XOR h(<nounce1,t1>)
+M3_prime = h(<nouncex,M1,M2,t1>)
+M6 = h(<sk_j,nouncex,M1,t1,~t2>)
 in
 	[	In(<M1,t1,ptr,M2,M3>),
 	R_Init(tid,$R,sk_j,ID_j,$TA,$Veh),
@@ -59,8 +59,8 @@ in
 	--[
 		Start_R($R),
     Eq(M3,M3_prime),
-    Commit($R,$Veh,<'R','Veh',X_v>),
-    Running($R,$TA,<'R','TA',X_v>)
+    Commit($R,$Veh,<'R','Veh',nouncex>),
+    Running($R,$TA,<'R','TA',nouncex>)
 	  ]->
 
 	[Out(<M1,t1,ptr,~t2,ID_j,M6>),
@@ -69,7 +69,7 @@ in
 rule TA_1:
 	let
 X_v = h(<A_v,ID_i,t1>)
-M6_prime = h(<sk_j,X_v,M1,t1,t2>)
+M6_prime = h(<sk_j,h(X_v),M1,t1,t2>)
 N1 = pmult(~nj, 'g')
 key = pmult(~nj, M1)
 SK = h(<key,X_v,ID_i>)
@@ -83,7 +83,7 @@ N3 = h(<N1,N4,sk_j,~t3>)
     Fr(~t3)
 	]
 	--[Eq(M6,M6_prime),
-  Commit($TA, $R,<'TA','R',X_v>),
+  Commit($TA, $R,<'TA','R',h(X_v)>),
   Running($TA,$Veh,<'TA','Veh',SK>),
   Running($TA,$R,<'TA','R',sk_j>),
   Secret_1(SK)]->
