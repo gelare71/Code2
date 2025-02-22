@@ -1,4 +1,4 @@
-Related Paper: Security Analysis and Enhancement of a Blockchain-Based Authentication Protocol for IoVs
+Related Paper: ‌BAS-IoV: Blockchain-Based Authentication for Secure and Scalable IoVs
 
 Authors: Gelare Oudi Ghadim, Mohammad Dakhilalian, Parvin Rastegari, Faramarz Hendessi and Willy Susilo 
 
